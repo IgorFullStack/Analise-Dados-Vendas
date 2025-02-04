@@ -1,0 +1,48 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.arima.model import ARIMA
+from sklearn.metrics import mean_absolute_error
+
+# Carregar os dados (substituir 'vendas.csv' pelo seu dataset)
+df = pd.read_csv('vendas.csv', parse_dates=['data'], index_col='data')
+df = df.asfreq('D')  # Definir frequência diária
+
+def plot_series(df):
+    plt.figure(figsize=(12,6))
+    plt.plot(df, label='Vendas')
+    plt.title('Série Temporal de Vendas')
+    plt.xlabel('Data')
+    plt.ylabel('Quantidade de Vendas')
+    plt.legend()
+    plt.show()
+
+# Decomposição da Série Temporal
+result = seasonal_decompose(df['vendas'], model='additive')
+result.plot()
+plt.show()
+
+# Criando modelo ARIMA para previsão futura
+train_size = int(len(df) * 0.8)
+train, test = df.iloc[:train_size], df.iloc[train_size:]
+
+model = ARIMA(train, order=(5,1,0))
+model_fit = model.fit()
+
+# Previsão
+predictions = model_fit.forecast(steps=len(test))
+
+# Avaliação
+mae = mean_absolute_error(test, predictions)
+print(f'Mean Absolute Error: {mae:.2f}')
+
+# Plotando previsões
+plt.figure(figsize=(12,6))
+plt.plot(train, label='Treino')
+plt.plot(test, label='Teste', color='orange')
+plt.plot(test.index, predictions, label='Previsões', color='red')
+plt.title('Previsão de Vendas com ARIMA')
+plt.legend()
+plt.show()
